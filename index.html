@@ -893,12 +893,15 @@ function showImportModal(){
 
   // ── GEOJSON PANEL ─────────────────────────────────────
   const gjPanel=document.createElement('div');gjPanel.className='osm-panel'+(activeImportTab==='geojson'?' on':'');gjPanel.id='ipanel-geojson';
-  gjPanel.innerHTML=`
-    <div class="info-banner"><strong>GeoJSON:</strong> Import from QGIS, Google My Maps, ArcGIS, Overpass Turbo, government open data, or any GIS tool. Supports FeatureCollection, Polygon, LineString, MultiPolygon.</div>
-    <div class="geojson-drop" id="gj-drop">
-      <i class="ti ti-file-type-json" style="font-size:40px"></i>
-      <p>Drop .geojson or .json file here</p>
-      <small>or click to browse</small>
+ gjPanel.innerHTML=`
+    <div class="info-banner" style="line-height:1.8">
+      <strong style="display:block;margin-bottom:4px">How to get GeoJSON:</strong>
+      <b>Overpass Turbo</b> — go to <a href="https://overpass-turbo.eu" target="_blank" style="color:#60a5fa">overpass-turbo.eu</a>, run a query, click Export → GeoJSON<br>
+      <b>Google My Maps</b> — open your map → ⋮ → Export to KML/KMZ, then convert at <a href="https://mygeodata.cloud/converter/kml-to-geojson" target="_blank" style="color:#60a5fa">mygeodata.cloud</a><br>
+      <b>QGIS</b> — Layer → Save As → Format: GeoJSON, CRS: EPSG:4326<br>
+      <b>Felt / uMap</b> — Export → GeoJSON<br>
+      <b>Government portals</b> — search "<em>your city</em> open data GeoJSON buildings"<br>
+      <b>Bounding Box tool</b> — <a href="https://boundingbox.klokantech.com" target="_blank" style="color:#60a5fa">boundingbox.klokantech.com</a> → copy CSV → use Manual BBox tab
     </div>
     <div id="gj-progress" style="display:none;margin-top:8px"></div>
     <div style="margin-top:10px;font-size:10px;color:var(--text-tertiary)">Or paste GeoJSON code:</div>
@@ -1206,9 +1209,9 @@ function showCtxMenu(x,y,items){closeCtxMenu();const el=document.createElement('
 function closeCtxMenu(){const el=document.getElementById('ctx-menu');if(el)el.remove()}
 
 // ─── COMPASS ───────────────────────────────────────────
-function updateCompassOverlay(){const o=document.getElementById('compass-overlay');if(!o)return;const screenX=ST.compassPos.x*zoom+panX,screenY=ST.compassPos.y*zoom+panY;o.style.left=screenX+'px';o.style.top=screenY+'px';o.style.width=(80*zoom)+'px';o.style.height=(80*zoom)+'px'}
-function renderCompassOverlay(){const o=document.getElementById('compass-overlay');if(!o)return;const s=80,cx2=40,cy2=40,R=34,r2=20;let h=`<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" xmlns="http://www.w3.org/2000/svg"><circle cx="${cx2}" cy="${cy2}" r="${R}" fill="rgba(255,255,255,0.88)" stroke="#c8860a" stroke-width="2"/>`;const dirs=[{a:0,c:'#c8860a'},{a:90,c:'#6B7280'},{a:180,c:'#6B7280'},{a:270,c:'#6B7280'}];for(const{a,c}of dirs){const rad=a*Math.PI/180;const px=cx2+Math.sin(rad)*r2,py=cy2-Math.cos(rad)*r2;const lx=cx2-Math.sin(rad)*6,ly=cy2+Math.cos(rad)*6;const wx=cx2-Math.cos(rad)*5,wy=cy2-Math.sin(rad)*5;const wx2=cx2+Math.cos(rad)*5,wy2=cy2+Math.sin(rad)*5;h+=`<polygon points="${px},${py} ${wx},${wy} ${lx},${ly} ${wx2},${wy2}" fill="${c}" stroke="white" stroke-width="0.8"/>` }h+=`<circle cx="${cx2}" cy="${cy2}" r="4" fill="#c8860a" stroke="white" stroke-width="1.5"/><text x="${cx2}" y="${cy2-R-4}" text-anchor="middle" font-size="14" font-family="'Outfit',sans-serif" font-weight="800" fill="#c8860a" stroke="white" stroke-width="3" paint-order="stroke">N</text></svg>`;o.innerHTML=h;o.style.cssText='position:absolute;pointer-events:auto;cursor:move;z-index:18';updateCompassOverlay();o.addEventListener('mousedown',e=>{e.stopPropagation();const p=toCanvas(e.clientX,e.clientY);const ox=p.x-ST.compassPos.x,oy=p.y-ST.compassPos.y;const mm=ev=>{const pt=toCanvas(ev.clientX,ev.clientY);ST.compassPos={x:Math.max(10,Math.min(MAP_W-80,Math.round(pt.x-ox))),y:Math.max(10,Math.min(MAP_H-80,Math.round(pt.y-oy)))};updateCompassOverlay()};const mu=()=>{window.removeEventListener('mousemove',mm);window.removeEventListener('mouseup',mu);scheduleSave()};window.addEventListener('mousemove',mm);window.addEventListener('mouseup',mu)})}
-
+function updateCompassOverlay(){const o=document.getElementById('compass-overlay');if(!o)return;const screenX=ST.compassPos.x*zoom+panX,screenY=ST.compassPos.y*zoom+panY;o.style.left=screenX+'px';o.style.width=(52*zoom)+'px';o.style.height=(52*zoom)+'px';}
+function renderCompassOverlay(){const o=document.getElementById('compass-overlay');if(!o)return;const s=52,cx2=26,cy2=26,R=22,r2=13;
+                                
 // ═══════════════════════════════════════════════════════
 //  SVG BUILD
 // ═══════════════════════════════════════════════════════
@@ -1240,7 +1243,7 @@ function buildSVG(){
   for(const b of ST.buildings)L.push(shapeStr(b)+(b.label&&!b.isTree?`<text x="${b.x+b.width/2}" y="${b.y+b.height/2}" text-anchor="middle" dominant-baseline="middle" font-size="${b.fontSize||9.5}" font-family="${ff}" font-weight="700" fill="${b.fillColor==='#1F2937'||b.fillColor==='#374151'?'#F9FAFB':'#374151'}">${b.label.replace(/\n/g,'&#xa;')}</text>`:''));
   for(const p of(ST.primitives||[])){if(p.type==='text-label')L.push(`<text x="${p.x}" y="${p.y}" text-anchor="middle" dominant-baseline="middle" font-size="${p.fontSize||14}" font-family="${ff}" font-weight="${p.fontWeight||700}" fill="${p.color}">${p.text||''}</text>`);else if(p.type==='line'||p.type==='arrow')L.push(`<line x1="${p.x1}" y1="${p.y1}" x2="${p.x2}" y2="${p.y2}" stroke="${p.color}" stroke-width="${p.strokeW}"/>`)}
   // Compass
-  const cpCx=ST.compassPos.x+36,cpCy=ST.compassPos.y+36,cpR=34;
+  const cpCx=ST.compassPos.x+26,cpCy=ST.compassPos.y+26,cpR=22;
   L.push(`<circle cx="${cpCx}" cy="${cpCy}" r="${cpR}" fill="rgba(255,255,255,0.88)" stroke="#c8860a" stroke-width="2"/>`);
   for(const{a,c}of[{a:0,c:'#c8860a'},{a:90,c:'#6B7280'},{a:180,c:'#6B7280'},{a:270,c:'#6B7280'}]){const rad=a*Math.PI/180,r2=20,px=cpCx+Math.sin(rad)*r2,py=cpCy-Math.cos(rad)*r2,lx=cpCx-Math.sin(rad)*6,ly=cpCy+Math.cos(rad)*6,wx=cpCx-Math.cos(rad)*5,wy=cpCy-Math.sin(rad)*5,wx2=cpCx+Math.cos(rad)*5,wy2=cpCy+Math.sin(rad)*5;L.push(`<polygon points="${px},${py} ${wx},${wy} ${lx},${ly} ${wx2},${wy2}" fill="${c}" stroke="white" stroke-width="0.8"/>`)}
   L.push(`<circle cx="${cpCx}" cy="${cpCy}" r="4" fill="#c8860a" stroke="white" stroke-width="1.5"/>`);
@@ -1500,6 +1503,26 @@ function renderBuildingPanel(rs,b){
   const sb=document.createElement('div');sb.className='rside-body';
   addField(sb,'Label',()=>{const ta=document.createElement('textarea');ta.className='ftxt';ta.rows=2;ta.value=b.label||'';ta.disabled=!isEdit;ta.oninput=()=>updB(b.id,'label',ta.value);return ta});
   addField(sb,'Category',()=>{const sel=document.createElement('select');sel.className='fsel';sel.disabled=!isEdit;CATS.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;if(c===b.category)o.selected=true;sel.appendChild(o)});sel.onchange=()=>updB(b.id,'category',sel.value);return sel});
+  // ── Always-visible transform inputs ──
+  const txCard=document.createElement('div');
+  txCard.style.cssText='background:var(--bg-secondary);border:1px solid var(--border-t);border-radius:5px;padding:8px 10px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:2px';
+  [['X','x'],['Y','y'],['°','rotation']].forEach(([lbl,key])=>{
+    const wrap=document.createElement('div');
+    const l=document.createElement('div');l.className='flabel';l.textContent=lbl;
+    const inp=document.createElement('input');inp.type='number';inp.className='finp';
+    inp.value=Math.round(key==='rotation'?(b.rotation||0):b[key]);
+    inp.style.cssText='margin-top:2px;padding:4px 5px;font-size:11px';
+    inp.title=key==='x'?'X position':key==='y'?'Y position':'Rotation (degrees)';
+    inp.oninput=()=>{
+      const v=parseFloat(inp.value)||0;
+      if(key==='rotation'){M.upd(b.id,{rotation:v})}
+      else if(key==='x'){M.upd(b.id,{x:Math.max(0,Math.min(v,MAP_W-b.width))})}
+      else{M.upd(b.id,{y:Math.max(0,Math.min(v,MAP_H-b.height))})}
+      scheduleSave();renderSVG();
+    };
+    wrap.appendChild(l);wrap.appendChild(inp);txCard.appendChild(wrap);
+  });
+  sb.appendChild(txCard);
   if(isEdit){
     addField(sb,'Shape',()=>{const w=document.createElement('div');w.className='shape-opts';ALL_SHAPES.forEach(sh=>{const opt=document.createElement('div');opt.className='shape-opt'+(b.shape===sh.id?' on':'');opt.innerHTML=`<svg viewBox="0 0 20 20" fill="currentColor">${sh.svg}</svg><span>${sh.label}</span>`;opt.onclick=()=>updB(b.id,'shape',sh.id);w.appendChild(opt)});return w});
     addField(sb,'Fill',()=>{const w=document.createElement('div');w.className='sw-grid';FILL_COLS.forEach(({l,v})=>{const s=document.createElement('button');s.className='sw'+(b.fillColor===v?' on':'');s.style.background=v;s.title=l;s.onclick=()=>updB(b.id,'fillColor',v);w.appendChild(s)});const cpw=document.createElement('label');cpw.className='sw-custom';cpw.title='Custom';cpw.innerHTML='+<input type="color" value="'+b.fillColor+'">';cpw.querySelector('input').oninput=ev=>updB(b.id,'fillColor',ev.target.value);w.appendChild(cpw);return w});
