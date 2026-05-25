@@ -1210,8 +1210,31 @@ function closeCtxMenu(){const el=document.getElementById('ctx-menu');if(el)el.re
 
 // ─── COMPASS ───────────────────────────────────────────
 function updateCompassOverlay(){const o=document.getElementById('compass-overlay');if(!o)return;const screenX=ST.compassPos.x*zoom+panX,screenY=ST.compassPos.y*zoom+panY;o.style.left=screenX+'px';o.style.width=(52*zoom)+'px';o.style.height=(52*zoom)+'px';}
-function renderCompassOverlay(){const o=document.getElementById('compass-overlay');if(!o)return;const s=52,cx2=26,cy2=26,R=22,r2=13;
-                                
+function renderCompassOverlay(){
+  const o=document.getElementById('compass-overlay');
+  if(!o)return;
+  const s=52,cx2=26,cy2=26,R=22,r2=13;
+  let svg=`<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" xmlns="http://www.w3.org/2000/svg">`;
+  svg+=`<circle cx="${cx2}" cy="${cy2}" r="${R}" fill="rgba(255,255,255,0.88)" stroke="#c8860a" stroke-width="2"/>`;
+  for(const{a,c}of[{a:0,c:'#c8860a'},{a:90,c:'#6B7280'},{a:180,c:'#6B7280'},{a:270,c:'#6B7280'}]){
+    const rad=a*Math.PI/180,px=cx2+Math.sin(rad)*r2,py=cy2-Math.cos(rad)*r2,lx=cx2-Math.sin(rad)*6,ly=cy2+Math.cos(rad)*6,wx=cx2-Math.cos(rad)*5,wy=cy2-Math.sin(rad)*5,wx2=cx2+Math.cos(rad)*5,wy2=cy2+Math.sin(rad)*5;
+    svg+=`<polygon points="${px},${py} ${wx},${wy} ${lx},${ly} ${wx2},${wy2}" fill="${c}" stroke="white" stroke-width="0.8"/>`;
+  }
+  svg+=`<circle cx="${cx2}" cy="${cy2}" r="4" fill="#c8860a" stroke="white" stroke-width="1.5"/>`;
+  svg+=`<text x="${cx2}" y="${cy2-R-4}" text-anchor="middle" font-size="12" font-family="'Outfit',sans-serif" font-weight="800" fill="#c8860a">N</text>`;
+  svg+=`</svg>`;
+  o.innerHTML=svg;
+  o.style.pointerEvents='auto';o.style.cursor='move';
+  o.addEventListener('mousedown',e=>{
+    e.stopPropagation();
+    const p=toCanvas(e.clientX,e.clientY);
+    const ox=p.x-ST.compassPos.x,oy=p.y-ST.compassPos.y;
+    const mm=ev=>{const pt=toCanvas(ev.clientX,ev.clientY);ST.compassPos={x:Math.max(10,Math.min(MAP_W-60,Math.round(pt.x-ox))),y:Math.max(10,Math.min(MAP_H-60,Math.round(pt.y-oy)))};updateCompassOverlay()};
+    const mu=()=>{window.removeEventListener('mousemove',mm);window.removeEventListener('mouseup',mu);scheduleSave()};
+    window.addEventListener('mousemove',mm);window.addEventListener('mouseup',mu);
+  });
+  updateCompassOverlay();
+}                                
 // ═══════════════════════════════════════════════════════
 //  SVG BUILD
 // ═══════════════════════════════════════════════════════
